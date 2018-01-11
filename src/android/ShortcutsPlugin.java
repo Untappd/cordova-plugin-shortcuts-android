@@ -27,21 +27,17 @@ import android.content.pm.PackageManager;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
 
+import com.untappdllc.app.R;
+
 public class ShortcutsPlugin extends CordovaPlugin {
 
     private static final String TAG = "ShortcutsPlugin";
     private static final String ACTION_SUPPORTS_DYNAMIC = "supportsDynamic";
-    private static final String ACTION_SUPPORTS_PINNED = "supportsPinned";
     private static final String ACTION_SET_DYNAMIC = "setDynamic";
-    private static final String ACTION_ADD_PINNED = "addPinned";
-    private static final String ACTION_GET_INTENT = "getIntent";
-    private static final String ACTION_ON_NEW_INTENT = "onNewIntent";
-
-    private CallbackContext onNewIntentCallbackContext = null;
 
     @Override
     public boolean execute(
-        String action, 
+        String action,
         JSONArray args,
         CallbackContext callbackContext) {
             try {
@@ -54,12 +50,6 @@ public class ShortcutsPlugin extends CordovaPlugin {
                     setDynamicShortcuts(args);
                     callbackContext.success();
                     return true;
-                } else if (action.equals(ACTION_GET_INTENT)) {
-                    getIntent(callbackContext);
-                    return true;
-                } else if (action.equals(ACTION_ON_NEW_INTENT)) {
-                    subscribeOnNewIntent(args, callbackContext);
-                    return true;
                 }
             }
             catch (Exception e) {
@@ -71,42 +61,6 @@ public class ShortcutsPlugin extends CordovaPlugin {
             return false;
     }
 
-    @Override
-    public void onNewIntent(
-        Intent intent
-    ) {
-        try {
-            if (this.onNewIntentCallbackContext != null) {
-                PluginResult result = new PluginResult(PluginResult.Status.OK, buildIntent(intent));
-                result.setKeepCallback(true);
-                this.onNewIntentCallbackContext.sendPluginResult(result);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Exception handling onNewIntent: " + e.getMessage());            
-        }
-    }
-
-    private void subscribeOnNewIntent(
-        JSONArray args, 
-        CallbackContext callbackContext
-    ) throws JSONException {
-        boolean remove = args.optBoolean(0);
-        if (remove) {
-            this.onNewIntentCallbackContext = null;
-            Log.i(TAG, "Removed callback for onNewIntent");
-        }
-        else {
-            this.onNewIntentCallbackContext = callbackContext;
-            Log.i(TAG, "Added a new callback for onNewIntent");
-        }
-    }
-
-    private void getIntent(CallbackContext callbackContext) throws JSONException  {
-        Intent intent = this.cordova.getActivity().getIntent();
-        PluginResult result = new PluginResult(PluginResult.Status.OK, buildIntent(intent));
-        callbackContext.sendPluginResult(result);
-    }
-
     private JSONObject buildIntent(
         Intent intent
     ) throws JSONException  {
@@ -114,12 +68,12 @@ public class ShortcutsPlugin extends CordovaPlugin {
 
         jsonIntent.put("action", intent.getAction());
         jsonIntent.put("flags", intent.getFlags());
-        
+
         Set<String> categories = intent.getCategories();
         if (categories != null) {
             jsonIntent.put("categories", new JSONArray(categories));
         }
-        
+
         Uri data = intent.getData();
         if (data != null) {
             jsonIntent.put("data", data.toString());
@@ -135,7 +89,7 @@ public class ShortcutsPlugin extends CordovaPlugin {
                 Object value = extras.get(key);
                 if (value instanceof Boolean) {
                     jsonExtras.put(key, (Boolean)value);
-                } 
+                }
                 else if (value instanceof Integer) {
                     jsonExtras.put(key, (Integer)value);
                 }
@@ -162,12 +116,12 @@ public class ShortcutsPlugin extends CordovaPlugin {
     ) throws JSONException {
 
         Intent intent = new Intent();
-        
+
         String activityClass = jsonIntent.optString(
-            "activityClass", 
+            "activityClass",
             this.cordova.getActivity().getClass().getName());
         String activityPackage = jsonIntent.optString(
-            "activityPackage", 
+            "activityPackage",
             this.cordova.getActivity().getPackageName());
         intent.setClassName(activityPackage, activityClass);
 
@@ -206,23 +160,23 @@ public class ShortcutsPlugin extends CordovaPlugin {
                 Object value = extras.get(key);
                 if (value != null) {
                     if (key.indexOf('.') < 0) {
-                        key = activityPackage + "." + key;                            
+                        key = activityPackage + "." + key;
                     }
                     if (value instanceof Boolean) {
                         intent.putExtra(key, (Boolean)value);
-                    } 
+                    }
                     else if (value instanceof Integer) {
                         intent.putExtra(key, (Integer)value);
                     }
                     else if (value instanceof Long) {
                         intent.putExtra(key, (Long)value);
-                    } 
+                    }
                     else if (value instanceof Float) {
                         intent.putExtra(key, (Float)value);
-                    } 
+                    }
                     else if (value instanceof Double) {
                         intent.putExtra(key, (Double)value);
-                    } 
+                    }
                     else {
                         intent.putExtra(key, value.toString());
                     }
@@ -245,7 +199,7 @@ public class ShortcutsPlugin extends CordovaPlugin {
             }
 
             ShortcutInfo.Builder builder = new ShortcutInfo.Builder(context, shortcutId);
-        
+
             String shortLabel = jsonShortcut.optString("shortLabel");
             String longLabel = jsonShortcut.optString("longLabel");
             if (shortLabel.length() == 0 && longLabel.length() == 0) {
@@ -265,7 +219,8 @@ public class ShortcutsPlugin extends CordovaPlugin {
             String activityPackage = this.cordova.getActivity().getPackageName();
             PackageManager pm = context.getPackageManager();
             ApplicationInfo applicationInfo = pm.getApplicationInfo(activityPackage, PackageManager.GET_META_DATA);
-            icon = Icon.createWithResource(activityPackage, iconName);
+            int id = context.getResources().getIdentifier(iconName, "drawable", context.getPackageName());
+            icon = Icon.createWithResource(activityPackage, id);
 
             JSONObject jsonIntent = jsonShortcut.optJSONObject("intent");
             if (jsonIntent == null) {
