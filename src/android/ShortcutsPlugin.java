@@ -26,7 +26,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
-import android.support.v4.graphics.drawable.IconCompat;
 
 public class ShortcutsPlugin extends CordovaPlugin {
 
@@ -262,17 +261,11 @@ public class ShortcutsPlugin extends CordovaPlugin {
             }
 
             Icon icon;
-            String iconBitmap = jsonShortcut.optString("iconBitmap");
-
-            if (iconBitmap.length() > 0) {
-                icon = Icon.createWithBitmap(decodeBase64Bitmap(iconBitmap));
-            }
-            else {
-                String activityPackage = this.cordova.getActivity().getPackageName();
-                PackageManager pm = context.getPackageManager();
-                ApplicationInfo applicationInfo = pm.getApplicationInfo(activityPackage, PackageManager.GET_META_DATA);
-                icon = Icon.createWithResource(activityPackage, applicationInfo.icon);
-            }
+            String iconName = jsonShortcut.optString("iconName");
+            String activityPackage = this.cordova.getActivity().getPackageName();
+            PackageManager pm = context.getPackageManager();
+            ApplicationInfo applicationInfo = pm.getApplicationInfo(activityPackage, PackageManager.GET_META_DATA);
+            icon = Icon.createWithResource(activityPackage, iconName);
 
             JSONObject jsonIntent = jsonShortcut.optJSONObject("intent");
             if (jsonIntent == null) {
